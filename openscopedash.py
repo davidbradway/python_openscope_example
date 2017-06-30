@@ -42,40 +42,51 @@ app.css.append_css({"external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"
 @app.callback(Output('example-graph', 'figure'),
               events=[Event('interval-component', 'interval')])
 def update_graph_live():
-    data = {
-        'time': [],
-        'voltage': []
-    }
-    #payload = {"trigger":{"1":[{"command":"run"}]}}
-    #r = requests.post(url, json=payload)
- 
+    data = {'time': [],'voltage': []}
+    '''
+    payload = {"awg":{"1":[{"command":"stop"},
+                           {"command":"setRegularWaveform",
+                            "signalType":"square",
+                            "signalFreq":1000000,
+                            "vpp":3000,
+                            "vOffset":0},
+                           {"command":"run"}]}}
+    r = requests.post(url, json=payload)
+    '''
+    payload = {"trigger":{"1":[{"command":"single"}]}}
+    r = requests.post(url, json=payload)
+    
     payload = {'osc': {'1': [{'command': 'read', 'acqCount': 1}]}}
     r = requests.post(url, json=payload)
     result = re.split(b'\r\n',r.content)
     # Decode UTF-8 bytes to Unicode, and convert single quotes 
     # to double quotes to make it valid JSON
-    str_json = result[1].decode('ASCII').replace("'", '"')
-    # Load the JSON to a Python list & dump it back out as formatted JSON
-    my_json = json.loads(str_json)
-    #pp.pprint(my_json)
 
-    actualSampleFreq = my_json['osc']['1'][0]['actualSampleFreq']/1000
+    if len(result) > 1 and result[1]:
+        str_json = result[1].decode('ASCII').replace("'", '"')
+        # Load the JSON to a Python list & dump it back out as formatted JSON
+        my_json = json.loads(str_json)
+        #pp.pprint(my_json)
 
-    for i in range(0, len(result[4])-2, 2):
-        data['voltage'].append(int.from_bytes(result[4][i:i+2], byteorder='little', signed=True))
-        data['time'].append(i/2/actualSampleFreq)
+        actualSampleFreq = my_json['osc']['1'][0]['actualSampleFreq']/1000
 
-    # Create the graph 
-    return {
-        'data': [go.Scatter(
-            x=data['time'],
-            y=data['voltage'],
-            mode='lines',
-        )],
-        'layout': go.Layout(
-            margin={'l': 40, 'b': 40, 't': 10, 'r': 0},
-        )
-    }
+        for i in range(0, len(result[4])-2, 2):
+            data['voltage'].append(int.from_bytes(result[4][i:i+2], byteorder='little', signed=True))
+            data['time'].append(i/2/actualSampleFreq)
+
+        # Create the graph 
+        return {
+            'data': [go.Scatter(
+                x=data['time'],
+                y=data['voltage'],
+                mode='lines',
+            )],
+            'layout': go.Layout(
+                margin={'l': 40, 'b': 40, 't': 10, 'r': 0},
+            )
+        }
+    else:
+        print('Error reading')
 
 if __name__ == '__main__':
     app.run_server(debug=True)

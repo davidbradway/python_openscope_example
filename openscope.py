@@ -18,6 +18,19 @@ payload = {'osc': {'1': [{"command": "getCurrentState"}]}}
 r = requests.post(url, json=payload)
 pp.pprint(r.json())
 
+'''
+payload = {"awg":{"1":[{"command":"stop"},
+                       {"command":"setRegularWaveform",
+                        "signalType":"square",
+                        "signalFreq":1000000,
+                        "vpp":3000,
+                        "vOffset":0},
+                       {"command":"run"}]}}
+r = requests.post(url, json=payload)
+'''
+payload = {"trigger":{"1":[{"command":"single"}]}}
+r = requests.post(url, json=payload)
+
 payload = {'osc': {'1': [{'command': 'read', 'acqCount': 1}]}}
 r = requests.post(url, json=payload)
 result = re.split(b'\r\n',r.content)
